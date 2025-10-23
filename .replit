@@ -1,0 +1,13 @@
+# .replit
+run = "npm run dev"
+language = "nodejs"
+entrypoint = "server/index.js"
+
+[nix]
+channel = "nodejs-18"
+
+[env]
+PATH = "/home/runner/$REPL_SLUG/node_modules/.bin"
+
+[git]
+enable = false
