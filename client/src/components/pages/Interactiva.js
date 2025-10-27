@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import './Interactiva.css';
 import axios from 'axios';
-import './Pages.css';
 
 const Interactiva = () => {
-  const [counter, setCounter] = useState(0);
-  const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [color, setColor] = useState('#667eea');
+  const [comments, setComments] = useState([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    comment: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState([]);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [apiUrl, setApiUrl] = useState('');
 
@@ -17,7 +20,7 @@ const Interactiva = () => {
     console.log('🌐 URL base detectada:', baseUrl);
   }, []);
 
-  // Verificar conexión con el backend
+  // Verificar conexión con el backend y cargar comentarios
   useEffect(() => {
     const checkBackendConnection = async () => {
       try {
@@ -32,86 +35,118 @@ const Interactiva = () => {
         
         console.log('✅ Backend conectado:', response.data);
         setBackendStatus('connected');
+        
+        // Cargar comentarios si el backend está conectado
+        await loadComments();
       } catch (error) {
         console.error('❌ Error conectando al backend:', error);
         setBackendStatus('error');
         
-        // Mostrar detalles del error
-        if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
-          console.log('🔌 El backend no está corriendo o no es accesible');
-        }
+        // Mostrar comentarios de ejemplo si el backend no está disponible
+        setComments([
+          {
+            id: 1,
+            name: 'Sistema',
+            comment: 'El backend no está disponible. Los comentarios se muestran en modo local.',
+            createdAt: new Date().toISOString()
+          }
+        ]);
       }
     };
 
     checkBackendConnection();
   }, []);
 
-  const addMessage = async () => {
-    if (inputText.trim()) {
-      try {
-        // Guardar mensaje localmente inmediatamente
-        const newMessage = {
-          id: Date.now(),
-          text: inputText,
-          timestamp: new Date().toLocaleTimeString(),
-          status: 'sending'
-        };
-        
-        setMessages(prev => [newMessage, ...prev]);
-        setInputText('');
-
-        // Intentar enviar al backend
-        if (backendStatus === 'connected') {
-          try {
-            await axios.post('/api/comments', {
-              name: 'Usuario',
-              comment: inputText
-            }, {
-              baseURL: window.location.origin
-            });
-            
-            // Actualizar estado a enviado
-            setMessages(prev => 
-              prev.map(msg => 
-                msg.id === newMessage.id 
-                  ? { ...msg, status: 'sent' } 
-                  : msg
-              )
-            );
-          } catch (error) {
-            console.error('Error enviando al backend:', error);
-            // Mantener mensaje local pero marcar error
-            setMessages(prev => 
-              prev.map(msg => 
-                msg.id === newMessage.id 
-                  ? { ...msg, status: 'local' } 
-                  : msg
-              )
-            );
+  const loadComments = async () => {
+    try {
+      const response = await axios.get('/api/comments', {
+        baseURL: window.location.origin
+      });
+      
+      if (response.data.success) {
+        setComments(response.data.data);
+      } else {
+        console.error('Error en la respuesta del servidor:', response.data);
+      }
+    } catch (error) {
+      console.error('Error cargando comentarios:', error);
+      // Mantener comentarios existentes o mostrar mensaje de error
+      if (comments.length === 0) {
+        setComments([
+          {
+            id: 1,
+            name: 'Sistema',
+            comment: 'No se pudieron cargar los comentarios del servidor.',
+            createdAt: new Date().toISOString()
           }
-        } else {
-          // Solo modo local
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === newMessage.id 
-                ? { ...msg, status: 'local' } 
-                : msg
-            )
-          );
-        }
-      } catch (error) {
-        console.error('Error agregando mensaje:', error);
+        ]);
       }
     }
   };
 
-  const clearMessages = () => {
-    setMessages([]);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Limpiar errores cuando el usuario escribe
+    if (errors.length > 0) {
+      setErrors([]);
+    }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      addMessage();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors([]);
+
+    try {
+      if (backendStatus === 'connected') {
+        // Enviar al backend real
+        const response = await axios.post('/api/comments', formData, {
+          baseURL: window.location.origin
+        });
+        
+        if (response.data.success) {
+          // Recargar comentarios desde el backend
+          await loadComments();
+          
+          // Limpiar formulario
+          setFormData({
+            name: '',
+            comment: ''
+          });
+        } else {
+          setErrors(response.data.errors || ['Error al enviar el comentario']);
+        }
+      } else {
+        // Modo local - agregar comentario localmente
+        const newComment = {
+          id: Date.now(),
+          name: formData.name || 'Anónimo',
+          comment: formData.comment,
+          createdAt: new Date().toISOString(),
+          local: true
+        };
+        
+        setComments(prev => [newComment, ...prev]);
+        setFormData({
+          name: '',
+          comment: ''
+        });
+        
+        console.log('💾 Comentario guardado localmente:', newComment);
+      }
+      
+    } catch (error) {
+      if (error.response && error.response.data.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setErrors(['Error al enviar el comentario']);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,136 +158,157 @@ const Interactiva = () => {
         timeout: 3000
       });
       setBackendStatus('connected');
-      alert(`✅ Backend conectado\nPuerto: ${response.data.port}\nStatus: ${response.data.status}`);
+      
+      // Recargar comentarios después de conectar
+      await loadComments();
+      
+      alert(`✅ Backend conectado\nStatus: ${response.data.status}\nComentarios: ${response.data.totalComments}`);
     } catch (error) {
       setBackendStatus('error');
       alert(`❌ Error conectando al backend:\n${error.message}`);
     }
   };
 
-  const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
-    <div className="page-container">
-      <div className="content-card">
-        <h2>Sección Interactiva</h2>
-        
+    <div className="App">
+      <div className="container">
+        <header>
+          <h1>Foro de Comentarios</h1>
+          <p>Comparte tus pensamientos con la comunidad</p>
+        </header>
+
         {/* Estado de la conexión */}
         <div className="connection-status">
           <div className={`status-indicator ${backendStatus}`}>
-            {backendStatus === 'connected' && '✅ Backend Conectado'}
+            {backendStatus === 'connected' && '✅ Conectado al Backend'}
             {backendStatus === 'checking' && '🔍 Verificando conexión...'}
-            {backendStatus === 'error' && '❌ Error de conexión'}
+            {backendStatus === 'error' && '❌ Modo Local - Backend no disponible'}
           </div>
           <button onClick={testBackendConnection} className="btn btn-secondary">
             🔄 Probar Conexión
           </button>
           {backendStatus === 'error' && (
             <div className="error-help">
-              <p>💡 El backend no está disponible. Posibles soluciones:</p>
+              <p>💡 El backend no está disponible. Los comentarios se guardarán localmente.</p>
               <ul>
-                <li>Verifica que el servidor esté corriendo</li>
-                <li>Ejecuta: <code>npm start</code> en la terminal</li>
-                <li>Revisa la consola para errores</li>
+                <li>Para conectar el backend, ejecuta: <code>npm start</code> en la terminal</li>
+                <li>Los comentarios locales se perderán al recargar la página</li>
               </ul>
             </div>
           )}
         </div>
 
-        <p className="page-description">
-          ¡Juega con estos componentes interactivos! {backendStatus === 'connected' ? 
-          'Los mensajes se guardarán en el backend.' : 'Los mensajes se guardarán localmente.'}
-        </p>
-
-        <div className="interactive-grid">
-          {/* Contador */}
-          <div className="interactive-card">
-            <h3>Contador Interactivo</h3>
-            <div className="counter-display">
-              <span className="counter-value">{counter}</span>
-            </div>
-            <div className="counter-buttons">
-              <button className="btn btn-danger" onClick={() => setCounter(prev => prev - 1)}>
-                -1
-              </button>
-              <button className="btn btn-secondary" onClick={() => setCounter(0)}>
-                Reiniciar
-              </button>
-              <button className="btn btn-success" onClick={() => setCounter(prev => prev + 1)}>
-                +1
-              </button>
-            </div>
-          </div>
-
-          {/* Selector de Color */}
-          <div className="interactive-card">
-            <h3>Selector de Color</h3>
-            <div className="color-preview" style={{ backgroundColor: color }}></div>
-            <div className="color-palette">
-              {colors.map((col, index) => (
-                <button
-                  key={index}
-                  className="color-swatch"
-                  style={{ backgroundColor: col }}
-                  onClick={() => setColor(col)}
-                ></button>
-              ))}
-            </div>
-            <p className="color-code">Código: {color}</p>
-          </div>
-
-          {/* Chat Interactivo */}
-          <div className="interactive-card chat-container">
-            <h3>Chat en Tiempo Real</h3>
-            <div className="backend-status">
-              <small>
-                {backendStatus === 'connected' ? '✅ Conectado al backend' : 
-                 backendStatus === 'error' ? '⚠️ Modo local (backend no disponible)' : 
-                 '🔍 Verificando conexión...'}
-              </small>
-            </div>
-            <div className="messages-container">
-              {messages.map(message => (
-                <div key={message.id} className={`message ${message.status}`}>
-                  <span className="message-text">{message.text}</span>
-                  <div className="message-info">
-                    <span className="message-time">{message.timestamp}</span>
-                    {message.status === 'local' && <span className="message-local">💾 Local</span>}
-                    {message.status === 'sending' && <span className="message-sending">⏳ Enviando...</span>}
-                  </div>
-                </div>
-              ))}
-              {messages.length === 0 && (
-                <p className="no-messages">No hay mensajes aún...</p>
-              )}
-            </div>
-            <div className="chat-input">
+        {/* Formulario */}
+        <section className="form-section">
+          <h2>Agregar Comentario</h2>
+          <form onSubmit={handleSubmit} className="comment-form">
+            <div className="form-group">
+              <label htmlFor="name">Nombre:</label>
               <input
                 type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Escribe un mensaje..."
-                className="text-input"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Tu nombre"
+                maxLength="100"
+                required
               />
-              <button 
-                className="btn btn-primary"
-                onClick={addMessage}
-                disabled={!inputText.trim()}
-              >
-                Enviar
-              </button>
             </div>
-            {messages.length > 0 && (
-              <button className="btn btn-secondary clear-btn" onClick={clearMessages}>
-                Limpiar Chat
-              </button>
+
+            <div className="form-group">
+              <label htmlFor="comment">Comentario:</label>
+              <textarea
+                id="comment"
+                name="comment"
+                value={formData.comment}
+                onChange={handleInputChange}
+                placeholder="Escribe tu comentario aquí (máximo 500 caracteres)"
+                rows="4"
+                maxLength="500"
+                required
+              />
+              <div className="char-count">
+                {formData.comment.length}/500 caracteres
+              </div>
+            </div>
+
+            {errors.length > 0 && (
+              <div className="errors">
+                {errors.map((error, index) => (
+                  <div key={index} className="error">⚠️ {error}</div>
+                ))}
+              </div>
             )}
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className={`submit-btn ${backendStatus === 'error' ? 'local-mode' : ''}`}
+            >
+              {loading ? 'Enviando...' : 
+               backendStatus === 'error' ? '💾 Guardar Localmente' : '📤 Publicar Comentario'}
+            </button>
+
+            {backendStatus === 'error' && (
+              <div className="local-warning">
+                <small>⚠️ Los comentarios se guardarán solo en esta sesión</small>
+              </div>
+            )}
+          </form>
+        </section>
+
+        {/* Lista de Comentarios */}
+        <section className="comments-section">
+          <div className="comments-header">
+            <h2>Comentarios ({comments.length})</h2>
+            <button onClick={loadComments} className="btn btn-refresh">
+              🔄 Actualizar
+            </button>
           </div>
-        </div>
+          
+          {comments.length === 0 ? (
+            <p className="no-comments">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+          ) : (
+            <div className="comments-list">
+              {comments.map(comment => (
+                <div key={comment.id} className={`comment-card ${comment.local ? 'local-comment' : ''}`}>
+                  <div className="comment-header">
+                    <strong className="comment-author">
+                      {comment.name}
+                      {comment.local && <span className="local-badge"> 💾 Local</span>}
+                    </strong>
+                    <span className="comment-date">
+                      {formatDate(comment.createdAt)}
+                    </span>
+                  </div>
+                  <div className="comment-content">
+                    {comment.comment}
+                  </div>
+                  {comment.local && (
+                    <div className="comment-footer">
+                      <small>Este comentario solo está visible en tu navegador</small>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
-};
+}
 
 export default Interactiva;
