@@ -6,7 +6,7 @@ entrypoint = "server/index.js"
 channel = "nodejs-18"
 
 [env]
-PATH = "/home/runner/$REPL_SLUG/node_modules/.bin"
+PATH = "/home/runner/$REPL_SLUG/node_modules/.bin:$PATH"
 
 [git]
 enable = false
