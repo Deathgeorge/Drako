@@ -1,35 +1,35 @@
 /* client/src/components/Header.css */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 3rem 2rem;
-    text-align: center;
-  }
-  
-  .header-content {
-    max-width: 800px;
-    margin: 0 auto;
+  background: linear-gradient(135deg, #97a7f0 0%, #b69ad1 100%);
+  color: white;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.header-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header-title {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  font-size: 1.2rem;
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 2rem 1rem;
   }
   
   .header-title {
-    font-size: 2.5rem;
-    margin: 0 0 1rem 0;
-    font-weight: 700;
+    font-size: 2rem;
   }
-  
-  .header-subtitle {
-    font-size: 1.2rem;
-    margin: 0;
-    opacity: 0.9;
-    font-weight: 300;
-  }
-  
-  @media (max-width: 768px) {
-    .header {
-      padding: 2rem 1rem;
-    }
-    
-    .header-title {
-      font-size: 2rem;
-    }
-  }
+}

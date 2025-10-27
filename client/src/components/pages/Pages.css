@@ -127,6 +127,7 @@
     overflow-x: auto;
     margin: 1rem 0;
     font-family: 'Courier New', monospace;
+    
   }
   
   .navigation-buttons {
@@ -137,6 +138,12 @@
   }
   
   /* Galería */
+  .imagen-pequena {
+    width: 230px; /* Un ejemplo de tamaño pequeño en píxeles */
+    height: auto; /* Para mantener la proporción de aspecto */
+    /* O usar un porcentaje para que sea responsive */
+    /* width: 10%; */
+  }
   .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -165,8 +172,8 @@
   
   .gallery-emoji {
     font-size: 3rem;
-    width: 80px;
-    height: 80px;
+    width: 200px;
+    height: 300px;
     border-radius: 50%;
     display: flex;
     align-items: center;

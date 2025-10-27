@@ -3,10 +3,9 @@ import './Navigation.css';
 
 const Navigation = ({ currentPage, onPageChange }) => {
   const menuItems = [
-    { id: 'instruccion', label: 'Instrucción', icon: '📚' },
+    { id: 'instruccion', label: 'Inicio', icon: '📚' },
     { id: 'galeria', label: 'Galería', icon: '🖼️' },
-    { id: 'interactiva', label: 'Interactiva', icon: '🎮' },
-    { id: 'resumen', label: 'Resumen', icon: '📊' }
+    { id: 'interactiva', label: 'Habla Conmigo', icon: '🎮' }
   ];
 
   return (

@@ -1,11 +1,9 @@
-// client/src/App.js
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import Instruccion from './components/pages/Instruccion';
 import Galeria from './components/pages/Galeria';
 import Interactiva from './components/pages/Interactiva';
-import Resumen from './components/pages/Resumen';
 import './App.css';
 
 function App() {
@@ -19,8 +17,6 @@ function App() {
         return <Galeria />;
       case 'interactiva':
         return <Interactiva />;
-      case 'resumen':
-        return <Resumen />;
       default:
         return <Instruccion />;
     }

@@ -8,7 +8,6 @@
     <meta name="description" content="Aplicación React con Node.js" />
     <title>Mi App React</title>
     <style>
-        /* Loading styles */
         .loading {
             display: flex;
             justify-content: center;
@@ -33,16 +32,13 @@
 <body>
     <noscript>Necesitas tener JavaScript habilitado para ejecutar esta app.</noscript>
     
-    <!-- Loading screen -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
     </div>
     
-    <!-- React app container -->
     <div id="root" style="display: none;"></div>
 
     <script>
-        // Hide loading screen when React app loads
         window.addEventListener('load', function() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('root').style.display = 'block';

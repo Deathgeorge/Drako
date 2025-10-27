@@ -1,6 +1,9 @@
-// client/src/components/pages/Galeria.js
 import React, { useState } from 'react';
 import './Pages.css';
+import imgCampo from '../../images/IMG_20210926_134514.jpg';
+import imgLago from '../../images/IMG_20230408_122818.jpg';
+import imgEnoy from '../../images/IMG_20211020_122641.jpg';
+
 
 const Galeria = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -8,45 +11,24 @@ const Galeria = () => {
   const images = [
     {
       id: 1,
-      title: "Montañas",
-      description: "Paisaje montañoso al atardecer",
+      title: "Campo",
+      description: "Paseos en el Simon Bolivar",
       color: "#FF6B6B",
-      emoji: "🏔️"
+      emoji: imgCampo
     },
     {
       id: 2,
-      title: "Océano",
-      description: "Playas tropicales y aguas cristalinas",
+      title: "Lago",
+      description: "Tarde en el Lago",
       color: "#4ECDC4",
-      emoji: "🌊"
-    },
-    {
-      id: 3,
-      title: "Bosque",
-      description: "Naturaleza verde y exuberante",
-      color: "#45B7D1",
-      emoji: "🌲"
+      emoji: imgLago
     },
     {
       id: 4,
-      title: "Ciudad",
-      description: "Skyline urbano moderno",
+      title: "Campo",
+      description: "Al loco le encanta el campo",
       color: "#96CEB4",
-      emoji: "🏙️"
-    },
-    {
-      id: 5,
-      title: "Desierto",
-      description: "Dunas y paisajes áridos",
-      color: "#FFEAA7",
-      emoji: "🏜️"
-    },
-    {
-      id: 6,
-      title: "Espacio",
-      description: "Galaxias y estrellas infinitas",
-      color: "#DDA0DD",
-      emoji: "🚀"
+      emoji: imgEnoy
     }
   ];
 
@@ -55,7 +37,7 @@ const Galeria = () => {
       <div className="content-card">
         <h2>Galería de Imágenes</h2>
         <p className="page-description">
-          Explora nuestra colección de imágenes. Haz clic en cualquier tarjeta para ver los detalles.
+          Las Aventuras de Drako
         </p>
 
         <div className="gallery-grid">
@@ -70,39 +52,18 @@ const Galeria = () => {
                 className="gallery-emoji"
                 style={{ backgroundColor: image.color }}
               >
-                {image.emoji}
+                <img src={image.emoji} alt="Descripción de la imagen" className="imagen-pequena"></img>
               </div>
               <div className="gallery-content">
                 <h3>{image.title}</h3>
                 <p>{image.description}</p>
-                {selectedImage === image.id && (
-                  <div className="image-details">
-                    <p><strong>ID:</strong> {image.id}</p>
-                    <p><strong>Color:</strong> 
-                      <span 
-                        className="color-sample"
-                        style={{ backgroundColor: image.color }}
-                      ></span>
-                      {image.color}
-                    </p>
-                  </div>
-                )}
+                
               </div>
             </div>
           ))}
         </div>
 
-        {selectedImage && (
-          <div className="selected-info">
-            <h3>Imagen Seleccionada: {images.find(img => img.id === selectedImage)?.title}</h3>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setSelectedImage(null)}
-            >
-              Cerrar Detalles
-            </button>
-          </div>
-        )}
+        
       </div>
     </div>
   );

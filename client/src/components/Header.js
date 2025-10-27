@@ -1,13 +1,11 @@
-// client/src/components/Header.js
 import React from 'react';
 import './Header.css';
 
 const Header = ({ currentPage }) => {
   const pageTitles = {
-    instruccion: '📚 Página de Instrucción',
-    galeria: '🖼️ Galería de Imágenes',
-    interactiva: '🎮 Sección Interactiva',
-    resumen: '📊 Resumen General'
+    instruccion: '📚 La vida de un Border Collie',
+    galeria: '🖼️ Pics',
+    interactiva: '🎮 Sección Interactiva'
   };
 
   return (
@@ -15,7 +13,7 @@ const Header = ({ currentPage }) => {
       <div className="header-content">
         <h1 className="header-title">{pageTitles[currentPage]}</h1>
         <p className="header-subtitle">
-          Explora las diferentes secciones de nuestra aplicación
+          La vida con un border Collie Loco
         </p>
       </div>
     </header>
