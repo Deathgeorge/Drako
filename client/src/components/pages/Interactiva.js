@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './Pages.css';
+import './Interactiva.css';
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/comments';

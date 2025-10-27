@@ -1,18 +1,23 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Middleware para Replit
+app.use(cors({
+  origin: ['https://tu-replit-url.repl.co', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Almacenamiento en memoria
 let comments = [];
 let nextId = 1;
 
-// Validar comentario
+// Validar comentario (mismo código que antes)
 const validateComment = (comment) => {
   const errors = [];
   
@@ -35,11 +40,9 @@ const validateComment = (comment) => {
   return errors;
 };
 
-// Routes
-// GET /api/comments - Obtener todos los comentarios (más recientes primero)
+// Routes (mismo código que antes)
 app.get('/api/comments', (req, res) => {
   try {
-    // Ordenar por fecha descendente (más recientes primero)
     const sortedComments = [...comments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(sortedComments);
   } catch (error) {
@@ -47,19 +50,16 @@ app.get('/api/comments', (req, res) => {
   }
 });
 
-// POST /api/comments - Crear nuevo comentario
 app.post('/api/comments', (req, res) => {
   try {
     const { name, comment } = req.body;
     
-    // Validar datos
     const validationErrors = validateComment({ name, comment });
     
     if (validationErrors.length > 0) {
       return res.status(400).json({ errors: validationErrors });
     }
     
-    // Crear nuevo comentario
     const newComment = {
       id: nextId++,
       name: name.trim(),
@@ -67,28 +67,25 @@ app.post('/api/comments', (req, res) => {
       createdAt: new Date().toISOString()
     };
     
-    // Agregar a la lista
     comments.push(newComment);
-    
     res.status(201).json(newComment);
   } catch (error) {
     res.status(500).json({ error: 'Error al crear el comentario' });
   }
 });
 
-// Ruta de prueba
+// Servir el frontend React (si está en la misma repl)
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'API de Comentarios funcionando',
-    endpoints: {
-      'GET /api/comments': 'Obtener todos los comentarios',
-      'POST /api/comments': 'Crear nuevo comentario'
-    }
-  });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📝 API de comentarios disponible en http://localhost:${PORT}/api/comments`);
+// Manejar todas las rutas para React Router
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Iniciar servidor para Replit
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`📝 API disponible en: /api/comments`);
 });
