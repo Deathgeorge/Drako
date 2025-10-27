@@ -6,38 +6,32 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware para Replit
+// Middleware para Replit - MÁS PERMISIVO
 app.use(cors({
-  origin: [
-    'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co',
-    'https://' + process.env.REPL_ID + '.id.repl.co',
-    'http://localhost:3000',
-    'http://localhost:5000'
-  ],
+  origin: true, // Permitir todos los orígenes
   credentials: true
 }));
+
 app.use(express.json());
+
+// Log todas las requests para debugging
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
 
 // VERIFICAR SI EXISTE EL BUILD DE REACT
 const clientBuildPath = path.join(__dirname, '../client/build');
-const clientPublicPath = path.join(__dirname, '../client/public');
 const indexHtmlPath = path.join(clientBuildPath, 'index.html');
 
 console.log('🔍 Verificando rutas...');
 console.log('Ruta del build:', clientBuildPath);
-console.log('Ruta public:', clientPublicPath);
-console.log('Ruta de index.html:', indexHtmlPath);
 
-// Verificar si existe el build de React
 if (fs.existsSync(clientBuildPath)) {
-  console.log('✅ Build de React encontrado - Sirviendo archivos estáticos');
+  console.log('✅ Build de React encontrado');
   app.use(express.static(clientBuildPath));
 } else {
-  console.log('⚠️  Build de React NO encontrado - Modo desarrollo');
-  // En desarrollo, servir archivos estáticos de public si existen
-  if (fs.existsSync(clientPublicPath)) {
-    app.use(express.static(clientPublicPath));
-  }
+  console.log('⚡ Modo desarrollo - Build no encontrado');
 }
 
 // Almacenamiento en memoria
@@ -47,56 +41,42 @@ let nextId = 1;
 // Validar comentario
 const validateComment = (comment) => {
   const errors = [];
-  
-  if (!comment.name || comment.name.trim() === '') {
-    errors.push('El nombre es requerido');
-  }
-  
-  if (!comment.comment || comment.comment.trim() === '') {
-    errors.push('El comentario es requerido');
-  }
-  
-  if (comment.comment && comment.comment.length > 500) {
-    errors.push('El comentario no puede tener más de 500 caracteres');
-  }
-  
-  if (comment.name && comment.name.length > 100) {
-    errors.push('El nombre no puede tener más de 100 caracteres');
-  }
-  
+  if (!comment.name || comment.name.trim() === '') errors.push('El nombre es requerido');
+  if (!comment.comment || comment.comment.trim() === '') errors.push('El comentario es requerido');
+  if (comment.comment && comment.comment.length > 500) errors.push('El comentario no puede tener más de 500 caracteres');
+  if (comment.name && comment.name.length > 100) errors.push('El nombre no puede tener más de 100 caracteres');
   return errors;
 };
 
 // ========== RUTAS DE LA API ==========
 
-// Ruta de verificación del servidor
 app.get('/api', (req, res) => {
+  console.log('✅ API root accedida');
   res.json({ 
     message: '✅ API funcionando correctamente',
     timestamp: new Date().toISOString(),
-    mode: fs.existsSync(clientBuildPath) ? 'production' : 'development',
-    endpoints: {
-      comments: {
-        GET: '/api/comments',
-        POST: '/api/comments'
-      }
+    environment: process.env.NODE_ENV || 'development',
+    replInfo: {
+      slug: process.env.REPL_SLUG,
+      owner: process.env.REPL_OWNER,
+      id: process.env.REPL_ID
     }
   });
 });
 
-// Ruta de salud
 app.get('/api/health', (req, res) => {
+  console.log('🏥 Health check');
   res.json({ 
     status: 'OK',
     server: 'running',
     time: new Date().toISOString(),
-    buildExists: fs.existsSync(clientBuildPath),
-    totalComments: comments.length
+    port: PORT,
+    buildExists: fs.existsSync(clientBuildPath)
   });
 });
 
-// Obtener todos los comentarios
 app.get('/api/comments', (req, res) => {
+  console.log('📝 Obteniendo comentarios');
   try {
     const sortedComments = [...comments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json({
@@ -105,7 +85,7 @@ app.get('/api/comments', (req, res) => {
       count: sortedComments.length
     });
   } catch (error) {
-    console.error('Error al obtener comentarios:', error);
+    console.error('❌ Error al obtener comentarios:', error);
     res.status(500).json({ 
       success: false,
       error: 'Error interno al obtener los comentarios' 
@@ -113,11 +93,10 @@ app.get('/api/comments', (req, res) => {
   }
 });
 
-// Crear nuevo comentario
 app.post('/api/comments', (req, res) => {
+  console.log('📝 Creando comentario:', req.body);
   try {
     const { name, comment } = req.body;
-    
     const validationErrors = validateComment({ name, comment });
     
     if (validationErrors.length > 0) {
@@ -135,8 +114,7 @@ app.post('/api/comments', (req, res) => {
     };
     
     comments.push(newComment);
-    
-    console.log('📝 Nuevo comentario creado:', newComment);
+    console.log('✅ Comentario creado:', newComment);
     
     res.status(201).json({
       success: true,
@@ -144,7 +122,7 @@ app.post('/api/comments', (req, res) => {
       message: 'Comentario creado exitosamente'
     });
   } catch (error) {
-    console.error('Error al crear comentario:', error);
+    console.error('❌ Error al crear comentario:', error);
     res.status(500).json({ 
       success: false,
       error: 'Error interno al crear el comentario' 
@@ -152,47 +130,24 @@ app.post('/api/comments', (req, res) => {
   }
 });
 
-// ========== MANEJO DE RUTAS DEL FRONTEND ==========
+// ========== RUTAS DEL FRONTEND ==========
 
 app.get('/', (req, res) => {
+  console.log('🏠 Serviendo ruta raíz');
   if (fs.existsSync(indexHtmlPath)) {
-    // ✅ MODO PRODUCCIÓN: Servir el build de React
-    console.log('🏠 Sirviendo index.html desde build');
     res.sendFile(indexHtmlPath);
-  } else if (fs.existsSync(path.join(clientPublicPath, 'index.html'))) {
-    // ⚡ MODO DESARROLLO: Servir desde public si existe
-    console.log('🏠 Sirviendo index.html desde public');
-    res.sendFile(path.join(clientPublicPath, 'index.html'));
   } else {
-    // 📡 SOLO BACKEND: Mostrar información de la API
     res.json({
-      message: '🚀 Backend Express funcionando correctamente',
-      status: 'Servidor activo',
-      mode: 'api-only',
-      frontend: fs.existsSync(clientBuildPath) ? 'Build encontrado' : 'No construido',
-      availableEndpoints: {
-        root: '/api',
-        health: '/api/health',
-        comments: {
-          GET: '/api/comments',
-          POST: '/api/comments'
-        }
-      },
-      instructions: {
-        development: 'Para desarrollo: cd client && npm start',
-        production: 'Para producción: npm run build-replit'
-      },
-      stats: {
-        totalComments: comments.length,
-        serverUptime: new Date().toISOString()
-      }
+      message: '🚀 Backend funcionando - Frontend no construido',
+      instruction: 'Ejecuta: npm run build-replit',
+      endpoints: ['/api', '/api/health', '/api/comments']
     });
   }
 });
 
-// Manejar todas las rutas para React Router
+// Manejar rutas de React Router
 app.get('*', (req, res) => {
-  // Si es una ruta de API que no existe
+  console.log(`🔄 Ruta catch-all: ${req.path}`);
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({
       success: false,
@@ -201,32 +156,22 @@ app.get('*', (req, res) => {
     });
   }
   
-  // Para rutas del frontend
   if (fs.existsSync(indexHtmlPath)) {
     res.sendFile(indexHtmlPath);
-  } else if (fs.existsSync(path.join(clientPublicPath, 'index.html'))) {
-    res.sendFile(path.join(clientPublicPath, 'index.html'));
   } else {
     res.json({
-      error: 'Frontend no disponible',
-      message: 'El frontend React no está construido ni disponible',
-      instruction: 'Ejecuta: npm run build-replit para construir el frontend'
+      message: 'Backend activo - Frontend en desarrollo',
+      currentPath: req.path
     });
   }
 });
 
-// Iniciar servidor para Replit
+// Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 =================================');
-  console.log('✅ Servidor Express iniciado correctamente');
+  console.log('✅ Servidor INICIADO correctamente');
   console.log(`📡 Puerto: ${PORT}`);
   console.log(`🌐 URL: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
-  console.log(`📊 Modo: ${fs.existsSync(clientBuildPath) ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
-  console.log(`💾 Comentarios en memoria: ${comments.length}`);
-  console.log('🔗 Endpoints disponibles:');
-  console.log('   GET  /api          - Información del API');
-  console.log('   GET  /api/health   - Estado del servidor');
-  console.log('   GET  /api/comments  - Obtener comentarios');
-  console.log('   POST /api/comments  - Crear comentario');
+  console.log(`🔗 Health: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/health`);
   console.log('🚀 =================================');
 });

@@ -1,209 +1,84 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
-  }
-  
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-    padding: 30px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  
-  header h1 {
-    color: #2c3e50;
-    margin-bottom: 10px;
-  }
-  
-  header p {
-    color: #7f8c8d;
-    font-size: 1.1em;
-  }
-  
-  .form-section {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-  }
-  
-  .form-section h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 10px;
-  }
-  
-  .comment-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .form-group label {
-    font-weight: 600;
-    margin-bottom: 5px;
-    color: #2c3e50;
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 5px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-  }
-  
-  .form-group input:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-  
-  .char-count {
-    text-align: right;
-    font-size: 0.9em;
-    color: #7f8c8d;
-    margin-top: 5px;
-  }
-  
-  .errors {
-    background: #ffeaea;
-    border: 1px solid #ff6b6b;
-    border-radius: 5px;
-    padding: 15px;
-  }
-  
-  .error {
-    color: #d63031;
-    margin-bottom: 5px;
-  }
-  
-  .error:last-child {
-    margin-bottom: 0;
-  }
-  
-  .submit-btn {
-    background: #3498db;
-    color: white;
-    padding: 15px 30px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .submit-btn:hover:not(:disabled) {
-    background: #2980b9;
-  }
-  
-  .submit-btn:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-  }
-  
-  .comments-section {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  
-  .comments-section h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 10px;
-  }
-  
-  .no-comments {
-    text-align: center;
-    color: #7f8c8d;
-    font-style: italic;
-    padding: 40px;
-  }
-  
-  .comments-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .comment-card {
-    border: 1px solid #e1e8ed;
+/* Estados de conexión */
+.connection-status {
+    background: #f8f9fa;
+    padding: 1rem;
     border-radius: 8px;
-    padding: 20px;
-    background: #fafafa;
-    transition: transform 0.2s;
+    margin-bottom: 1rem;
+    border-left: 4px solid #6c757d;
   }
   
-  .comment-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  .connection-status.connected {
+    border-left-color: #28a745;
   }
   
-  .comment-header {
+  .connection-status.error {
+    border-left-color: #dc3545;
+  }
+  
+  .status-indicator {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .status-indicator.connected {
+    color: #28a745;
+  }
+  
+  .status-indicator.error {
+    color: #dc3545;
+  }
+  
+  .error-help {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .error-help ul {
+    margin: 0.5rem 0 0 1rem;
+    padding: 0;
+  }
+  
+  .backend-status {
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #e9ecef;
+    border-radius: 5px;
+  }
+  
+  /* Estados de mensajes */
+  .message.sending {
+    opacity: 0.7;
+    background: #fff3cd;
+  }
+  
+  .message.local {
+    background: #e2e3e5;
+  }
+  
+  .message-sending, .message-local {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    margin-left: 0.5rem;
+  }
+  
+  .message-sending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .message-local {
+    background: #e2e3e5;
+    color: #383d41;
+  }
+  
+  .message-info {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-  }
-  
-  .comment-author {
-    color: #2c3e50;
-    font-size: 1.1em;
-  }
-  
-  .comment-date {
-    color: #7f8c8d;
-    font-size: 0.9em;
-  }
-  
-  .comment-content {
-    color: #2c3e50;
-    line-height: 1.6;
-    white-space: pre-wrap;
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    .container {
-      padding: 10px;
-    }
-    
-    .comment-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 5px;
-    }
-    
-    .form-section,
-    .comments-section {
-      padding: 20px;
-    }
+    gap: 0.5rem;
   }

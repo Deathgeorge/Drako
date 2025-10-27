@@ -1,171 +1,258 @@
 import React, { useState, useEffect } from 'react';
-import './Interactiva.css';
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/comments';
+import './Pages.css';
 
 const Interactiva = () => {
-  const [comments, setComments] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    comment: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
+  const [counter, setCounter] = useState(0);
+  const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [color, setColor] = useState('#667eea');
+  const [backendStatus, setBackendStatus] = useState('checking');
+  const [apiUrl, setApiUrl] = useState('');
 
-  // Cargar comentarios al iniciar
+  // Detectar la URL base automáticamente
   useEffect(() => {
-    loadComments();
+    const baseUrl = window.location.origin;
+    setApiUrl(baseUrl);
+    console.log('🌐 URL base detectada:', baseUrl);
   }, []);
 
-  const loadComments = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      setComments(response.data);
-    } catch (error) {
-      console.error('Error cargando comentarios:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Limpiar errores cuando el usuario escribe
-    if (errors.length > 0) {
-      setErrors([]);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors([]);
-
-    try {
-      const response = await axios.post(API_URL, formData);
-      
-      // Recargar comentarios
-      await loadComments();
-      
-      // Limpiar formulario
-      setFormData({
-        name: '',
-        comment: ''
-      });
-      
-    } catch (error) {
-      if (error.response && error.response.data.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setErrors(['Error al enviar el comentario']);
+  // Verificar conexión con el backend
+  useEffect(() => {
+    const checkBackendConnection = async () => {
+      try {
+        setBackendStatus('checking');
+        console.log('🔍 Probando conexión con el backend...');
+        
+        // Intentar conectar al backend
+        const response = await axios.get('/api/health', { 
+          timeout: 5000,
+          baseURL: window.location.origin
+        });
+        
+        console.log('✅ Backend conectado:', response.data);
+        setBackendStatus('connected');
+      } catch (error) {
+        console.error('❌ Error conectando al backend:', error);
+        setBackendStatus('error');
+        
+        // Mostrar detalles del error
+        if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
+          console.log('🔌 El backend no está corriendo o no es accesible');
+        }
       }
-    } finally {
-      setLoading(false);
+    };
+
+    checkBackendConnection();
+  }, []);
+
+  const addMessage = async () => {
+    if (inputText.trim()) {
+      try {
+        // Guardar mensaje localmente inmediatamente
+        const newMessage = {
+          id: Date.now(),
+          text: inputText,
+          timestamp: new Date().toLocaleTimeString(),
+          status: 'sending'
+        };
+        
+        setMessages(prev => [newMessage, ...prev]);
+        setInputText('');
+
+        // Intentar enviar al backend
+        if (backendStatus === 'connected') {
+          try {
+            await axios.post('/api/comments', {
+              name: 'Usuario',
+              comment: inputText
+            }, {
+              baseURL: window.location.origin
+            });
+            
+            // Actualizar estado a enviado
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === newMessage.id 
+                  ? { ...msg, status: 'sent' } 
+                  : msg
+              )
+            );
+          } catch (error) {
+            console.error('Error enviando al backend:', error);
+            // Mantener mensaje local pero marcar error
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === newMessage.id 
+                  ? { ...msg, status: 'local' } 
+                  : msg
+              )
+            );
+          }
+        } else {
+          // Solo modo local
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === newMessage.id 
+                ? { ...msg, status: 'local' } 
+                : msg
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error agregando mensaje:', error);
+      }
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const clearMessages = () => {
+    setMessages([]);
   };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      addMessage();
+    }
+  };
+
+  const testBackendConnection = async () => {
+    try {
+      setBackendStatus('checking');
+      const response = await axios.get('/api/health', {
+        baseURL: window.location.origin,
+        timeout: 3000
+      });
+      setBackendStatus('connected');
+      alert(`✅ Backend conectado\nPuerto: ${response.data.port}\nStatus: ${response.data.status}`);
+    } catch (error) {
+      setBackendStatus('error');
+      alert(`❌ Error conectando al backend:\n${error.message}`);
+    }
+  };
+
+  const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
 
   return (
-    <div className="App">
-      <div className="container">
-        <header>
-          <h1>Foro de Comentarios</h1>
-          <p>Comparte tus pensamientos con la comunidad</p>
-        </header>
-
-        {/* Formulario */}
-        <section className="form-section">
-          <h2>Agregar Comentario</h2>
-          <form onSubmit={handleSubmit} className="comment-form">
-            <div className="form-group">
-              <label htmlFor="name">Nombre:</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Tu nombre"
-                maxLength="100"
-                required
-              />
+    <div className="page-container">
+      <div className="content-card">
+        <h2>Sección Interactiva</h2>
+        
+        {/* Estado de la conexión */}
+        <div className="connection-status">
+          <div className={`status-indicator ${backendStatus}`}>
+            {backendStatus === 'connected' && '✅ Backend Conectado'}
+            {backendStatus === 'checking' && '🔍 Verificando conexión...'}
+            {backendStatus === 'error' && '❌ Error de conexión'}
+          </div>
+          <button onClick={testBackendConnection} className="btn btn-secondary">
+            🔄 Probar Conexión
+          </button>
+          {backendStatus === 'error' && (
+            <div className="error-help">
+              <p>💡 El backend no está disponible. Posibles soluciones:</p>
+              <ul>
+                <li>Verifica que el servidor esté corriendo</li>
+                <li>Ejecuta: <code>npm start</code> en la terminal</li>
+                <li>Revisa la consola para errores</li>
+              </ul>
             </div>
+          )}
+        </div>
 
-            <div className="form-group">
-              <label htmlFor="comment">Comentario:</label>
-              <textarea
-                id="comment"
-                name="comment"
-                value={formData.comment}
-                onChange={handleInputChange}
-                placeholder="Escribe tu comentario aquí (máximo 500 caracteres)"
-                rows="4"
-                maxLength="500"
-                required
-              />
-              <div className="char-count">
-                {formData.comment.length}/500 caracteres
-              </div>
+        <p className="page-description">
+          ¡Juega con estos componentes interactivos! {backendStatus === 'connected' ? 
+          'Los mensajes se guardarán en el backend.' : 'Los mensajes se guardarán localmente.'}
+        </p>
+
+        <div className="interactive-grid">
+          {/* Contador */}
+          <div className="interactive-card">
+            <h3>Contador Interactivo</h3>
+            <div className="counter-display">
+              <span className="counter-value">{counter}</span>
             </div>
+            <div className="counter-buttons">
+              <button className="btn btn-danger" onClick={() => setCounter(prev => prev - 1)}>
+                -1
+              </button>
+              <button className="btn btn-secondary" onClick={() => setCounter(0)}>
+                Reiniciar
+              </button>
+              <button className="btn btn-success" onClick={() => setCounter(prev => prev + 1)}>
+                +1
+              </button>
+            </div>
+          </div>
 
-            {errors.length > 0 && (
-              <div className="errors">
-                {errors.map((error, index) => (
-                  <div key={index} className="error">⚠️ {error}</div>
-                ))}
-              </div>
-            )}
+          {/* Selector de Color */}
+          <div className="interactive-card">
+            <h3>Selector de Color</h3>
+            <div className="color-preview" style={{ backgroundColor: color }}></div>
+            <div className="color-palette">
+              {colors.map((col, index) => (
+                <button
+                  key={index}
+                  className="color-swatch"
+                  style={{ backgroundColor: col }}
+                  onClick={() => setColor(col)}
+                ></button>
+              ))}
+            </div>
+            <p className="color-code">Código: {color}</p>
+          </div>
 
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="submit-btn"
-            >
-              {loading ? 'Enviando...' : 'Publicar Comentario'}
-            </button>
-          </form>
-        </section>
-
-        {/* Lista de Comentarios */}
-        <section className="comments-section">
-          <h2>Comentarios ({comments.length})</h2>
-          
-          {comments.length === 0 ? (
-            <p className="no-comments">No hay comentarios aún. ¡Sé el primero en comentar!</p>
-          ) : (
-            <div className="comments-list">
-              {comments.map(comment => (
-                <div key={comment.id} className="comment-card">
-                  <div className="comment-header">
-                    <strong className="comment-author">{comment.name}</strong>
-                    <span className="comment-date">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                  </div>
-                  <div className="comment-content">
-                    {comment.comment}
+          {/* Chat Interactivo */}
+          <div className="interactive-card chat-container">
+            <h3>Chat en Tiempo Real</h3>
+            <div className="backend-status">
+              <small>
+                {backendStatus === 'connected' ? '✅ Conectado al backend' : 
+                 backendStatus === 'error' ? '⚠️ Modo local (backend no disponible)' : 
+                 '🔍 Verificando conexión...'}
+              </small>
+            </div>
+            <div className="messages-container">
+              {messages.map(message => (
+                <div key={message.id} className={`message ${message.status}`}>
+                  <span className="message-text">{message.text}</span>
+                  <div className="message-info">
+                    <span className="message-time">{message.timestamp}</span>
+                    {message.status === 'local' && <span className="message-local">💾 Local</span>}
+                    {message.status === 'sending' && <span className="message-sending">⏳ Enviando...</span>}
                   </div>
                 </div>
               ))}
+              {messages.length === 0 && (
+                <p className="no-messages">No hay mensajes aún...</p>
+              )}
             </div>
-          )}
-        </section>
+            <div className="chat-input">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Escribe un mensaje..."
+                className="text-input"
+              />
+              <button 
+                className="btn btn-primary"
+                onClick={addMessage}
+                disabled={!inputText.trim()}
+              >
+                Enviar
+              </button>
+            </div>
+            {messages.length > 0 && (
+              <button className="btn btn-secondary clear-btn" onClick={clearMessages}>
+                Limpiar Chat
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Interactiva;
