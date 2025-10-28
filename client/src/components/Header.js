@@ -3,7 +3,7 @@ import './Header.css';
 
 const Header = ({ currentPage }) => {
   const pageTitles = {
-    instruccion: '📚 La vida de un Border Collie',
+    instruccion: '🐶 La vida de un Border Collie',
     galeria: '🖼️ Pics',
     interactiva: '🎮 Sección Interactiva'
   };

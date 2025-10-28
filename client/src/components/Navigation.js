@@ -11,7 +11,7 @@ const Navigation = ({ currentPage, onPageChange }) => {
   return (
     <nav className="navigation">
       <div className="nav-brand">
-        <h2>Mi App React</h2>
+        <h2>Darko "Drakinator"</h2>
       </div>
       <ul className="nav-menu">
         {menuItems.map(item => (
